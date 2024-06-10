@@ -316,15 +316,18 @@ def testing(url, ip, steps):
     else:
         TaskInsert(driver, steps, elements, response, etype)
 
+    predicted_element = None
+    
     if(etype != 'Success'):
-        SH.SelfHealing(driver, steps, stepslist, testId)
+        print('Predicting best element')
+        predicted_element = SH.SelfHealing(driver, steps, stepslist, testId)
     else:
         driver.quit()
 
     driver.quit()
 
     if(etype == 'Success'):
-        return test_data, True
+        return test_data, True, predicted_element
     
     else:
-        return test_data, False
+        return test_data, False, predicted_element

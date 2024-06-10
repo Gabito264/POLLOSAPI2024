@@ -31,11 +31,11 @@ def makeTest():
         return make_response(jsonify({"error": "Missing url in request"}), 400)
     elif not ip:
         return make_response(jsonify({"error": "Missing ip in request"}), 400)
-    result, response = SF.testing(url, ip, tasks)
+    result, response, predicted_element = SF.testing(url, ip, tasks)
     if (result['EType'] == "Success"):
         return make_response(jsonify({'Results': result['EType'], 'Success': response}), 200)
     else:
-        return make_response(jsonify({'Results': result['EType'], 'Success': response}), 400)
+        return make_response(jsonify({'Results': result['EType'], 'Success': response, "PredictedElement": predicted_element}), 400)
 
 @app.route("/getTests", methods=['GET'])
 def getTests():

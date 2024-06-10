@@ -3,9 +3,8 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import SQLFunctions as sql
+import json
 
 def SelfHealing(driver, tasks, tasks_results, TestId):
 
@@ -82,15 +81,19 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
 
     page_data_df = pd.DataFrame(data)
 
-    # Retrieve and format database data
-    
+    print('aa')
 
+    # Retrieve and format database data
     for result in tasks_results:
         if ('Inserted' not in result["Result"]) and ('Clicked' not in result["Result"]):
+            step = result["Step"]
+            action = tasks[step-1]['action']
 
-            action = result["action"]
-            
             db_data_nonformatted = sql.getAllSuccessfulTasks(TestId, action)
+
+            if len(db_data_nonformatted) == 0:
+                return None
+            
             db_data = [
                 {
                     "class": element.get("class", None),
@@ -115,19 +118,17 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
             page_data_df.fillna('None', inplace=True)
             db_data_df.fillna('None', inplace=True)
 
-            encoder = OneHotEncoder(handle_unknown='ignore')
-
+            # OneHotEncode all data at once
             combined_data = pd.concat([page_data_df, db_data_df])
 
+            # Ensure consistent data types
             combined_data = combined_data.astype(str)
 
+            encoder = OneHotEncoder(handle_unknown='ignore')
             encoded_combined_data = encoder.fit_transform(combined_data)
 
-
             page_data_encoded = encoded_combined_data[:len(page_data_df)]
-            db_data_encoded = encoded_combined_data[len(db_data_df):]
-
-            step = result["Step"]
+            db_data_encoded = encoded_combined_data[len(page_data_df):]
 
             current_element_data = {
                 "class": None,
@@ -145,7 +146,11 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
             df_current_element = pd.DataFrame([current_element_data])
             df_current_element.fillna("None", inplace=True)
 
-            encoded_current_data = encoder.fit_transform(df_current_element)
+            # Reindex the current element DataFrame to match the order of combined_data columns
+            df_current_element = df_current_element.reindex(columns=combined_data.columns, fill_value="None")
+
+            # Encode the current element data using the fitted encoder
+            encoded_current_data = encoder.transform(df_current_element)
 
             rf = RandomForestClassifier(n_estimators=100, random_state=42)
             rf.fit(page_data_encoded, range(len(page_data_df)))
@@ -156,13 +161,15 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
             print("Predicted element index: ", predicted_index)
             print("Probabilities: ")
             for i, p in enumerate(probabilities):
-                if p > 0: # Filtering out zero probabilities for clarit,
+                if p > 0: # Filtering out zero probabilities for clarity
                     print(f" Element {i} - Probability: {p}")
 
+            predicted_element_json = json.loads(page_data_df.iloc[predicted_index].to_json())
             print("Predicted element:")
-            print(page_data_df.iloc[predicted_index])
+            print(predicted_element_json)
 
-            return
+            return predicted_element_json
+
 
     
 
