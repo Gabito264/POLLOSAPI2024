@@ -129,5 +129,5 @@ def insertTask(class_bd, css_selector, id, link_text, partial_link_text, name, t
         return False
     
 def getAllSuccessfulTasks(TestId, action):
-    query = "SELECT * FROM Tasks T JOIN Success S ON T.SuccessId = S.id WHERE T.SuccessId IS NOT NULL AND S.TestId = %s AND action = %s"
+    query = "SELECT T.class, T.css_selector, T.id, T.link_text, T.partial_link_text, T.name, T.tag_name, T.xpath FROM Tasks T JOIN Success S ON T.SuccessId = S.id WHERE T.SuccessId IS NOT NULL AND S.TestId = %s AND action = %s"
     return execute_query(query, (TestId, action))

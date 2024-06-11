@@ -8,80 +8,78 @@ import json
 
 def SelfHealing(driver, tasks, tasks_results, TestId):
 
-    script = """
-    function getCssAndXPath(element) {
-        function getCssSelector(element) {
-            if (element.tagName.toLowerCase() === 'html')
-                return 'html';
-            if (element.tagName.toLowerCase() === 'body')
-                return 'body';
-            var path = [];
-            while (element.parentNode) {
-                var siblings = element.parentNode.children;
-                var index = 0;
-                for (var i = 0; i < siblings.length; i++) {
-                    if (siblings[i] === element) {
-                        path.unshift(element.tagName.toLowerCase() + (index > 0 ? ':nth-of-type(' + (index + 1) + ')' : ''));
-                        break;
-                    }
-                    if (siblings[i].tagName === element.tagName)
-                        index++;
-                }
-                element = element.parentNode;
-            }
-            return path.join(' > ');
-        }
+    # script = """
+    # function getCssAndXPath(element) {
+    #     function getCssSelector(element) {
+    #         if (element.tagName.toLowerCase() === 'html')
+    #             return 'html';
+    #         if (element.tagName.toLowerCase() === 'body')
+    #             return 'body';
+    #         var path = [];
+    #         while (element.parentNode) {
+    #             var siblings = element.parentNode.children;
+    #             var index = 0;
+    #             for (var i = 0; i < siblings.length; i++) {
+    #                 if (siblings[i] === element) {
+    #                     path.unshift(element.tagName.toLowerCase() + (index > 0 ? ':nth-of-type(' + (index + 1) + ')' : ''));
+    #                     break;
+    #                 }
+    #                 if (siblings[i].tagName === element.tagName)
+    #                     index++;
+    #             }
+    #             element = element.parentNode;
+    #         }
+    #         return path.join(' > ');
+    #     }
         
-        function getXPathForElement(element) {
-            var idx = function (sib) {
-                var count = 1;
-                for (var sibling = sib.previousSibling; sibling; sibling = sibling.previousSibling) {
-                    if (sibling.nodeType === 1 && sibling.nodeName === sib.nodeName) {
-                        count++;
-                    }
-                }
-                return count;
-            };
-            var segs = [];
-            for (; element && element.nodeType === 1; element = element.parentNode) {
-                if (element.hasAttribute('id')) {
-                    segs.unshift(element.localName.toLowerCase() + '[@id="' + element.getAttribute('id') + '"]');
-                } else {
-                    var index = idx(element);
-                    var tagName = element.localName.toLowerCase();
-                    segs.unshift(tagName + '[' + index + ']');
-                }
-            }
-            return segs.length ? '/' + segs.join('/') : null;
-        }
+    #     function getXPathForElement(element) {
+    #         var idx = function (sib) {
+    #             var count = 1;
+    #             for (var sibling = sib.previousSibling; sibling; sibling = sibling.previousSibling) {
+    #                 if (sibling.nodeType === 1 && sibling.nodeName === sib.nodeName) {
+    #                     count++;
+    #                 }
+    #             }
+    #             return count;
+    #         };
+    #         var segs = [];
+    #         for (; element && element.nodeType === 1; element = element.parentNode) {
+    #             if (element.hasAttribute('id')) {
+    #                 segs.unshift(element.localName.toLowerCase() + '[@id="' + element.getAttribute('id') + '"]');
+    #             } else {
+    #                 var index = idx(element);
+    #                 var tagName = element.localName.toLowerCase();
+    #                 segs.unshift(tagName + '[' + index + ']');
+    #             }
+    #         }
+    #         return segs.length ? '/' + segs.join('/') : null;
+    #     }
         
-        var elements = document.getElementsByTagName('*');
-        var result = [];
-        for (var i = 0; i < elements.length; i++) {
-            var element = elements[i];
-            result.push({
-                tag_name: element.tagName.toLowerCase(),
-                class: element.className || null,
-                css_selector: getCssSelector(element),
-                id: element.id || null,
-                link_text: element.tagName.toLowerCase() === 'a' ? element.text : null,
-                partial_link_text: element.tagName.toLowerCase() === 'a' ? element.text : null,
-                name: element.name || null,
-                xpath: getXPathForElement(element)
-            });
-        }
-        return result;
-    }
-    return getCssAndXPath();
-    """
+    #     var elements = document.getElementsByTagName('*');
+    #     var result = [];
+    #     for (var i = 0; i < elements.length; i++) {
+    #         var element = elements[i];
+    #         result.push({
+    #             tag_name: element.tagName.toLowerCase(),
+    #             class: element.className || null,
+    #             css_selector: getCssSelector(element),
+    #             id: element.id || null,
+    #             link_text: element.tagName.toLowerCase() === 'a' ? element.text : null,
+    #             partial_link_text: element.tagName.toLowerCase() === 'a' ? element.text : null,
+    #             name: element.name || null,
+    #             xpath: getXPathForElement(element)
+    #         });
+    #     }
+    #     return result;
+    # }
+    # return getCssAndXPath();
+    # """
 
     # Execute the JavaScript to get all element data
-    data = driver.execute_script(script)
+    # data = driver.execute_script(script)
     driver.quit()
 
-    page_data_df = pd.DataFrame(data)
-
-    print('aa')
+    # page_data_df = pd.DataFrame(data)
 
     # Retrieve and format database data
     for result in tasks_results:
@@ -90,8 +88,10 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
             action = tasks[step-1]['action']
 
             db_data_nonformatted = sql.getAllSuccessfulTasks(TestId, action)
+    
 
             if len(db_data_nonformatted) == 0:
+                print("No data to predict")
                 return None
             
             db_data = [
@@ -107,6 +107,7 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
                 }
                 for element in db_data_nonformatted
             ]
+
             db_data_df = pd.DataFrame(db_data)
 
             required_columns = ["class", "css_selector", "id", "link_text", "partial_link_text", "name", "tag_name", "xpath"]
@@ -115,20 +116,29 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
                     db_data_df[col] = 'None'
 
             # Fill NaN values and ensure consistent data types
-            page_data_df.fillna('None', inplace=True)
+            # page_data_df.fillna('None', inplace=True)
             db_data_df.fillna('None', inplace=True)
 
             # OneHotEncode all data at once
-            combined_data = pd.concat([page_data_df, db_data_df])
+            # combined_data = pd.concat([page_data_df, db_data_df])
+            combined_data = pd.concat([db_data_df])
+
+            db_data_df = db_data_df.astype(str)
+
+            if db_data_df.empty:
+                print("Error: DataFrame is empty after data formatting")
+                return None
+
 
             # Ensure consistent data types
-            combined_data = combined_data.astype(str)
+            # combined_data = combined_data.astype(str)
 
             encoder = OneHotEncoder(handle_unknown='ignore')
-            encoded_combined_data = encoder.fit_transform(combined_data)
+            # encoded_combined_data = encoder.fit_transform(combined_data)
+            db_data_encoded = encoder.fit_transform(db_data_df)
 
-            page_data_encoded = encoded_combined_data[:len(page_data_df)]
-            db_data_encoded = encoded_combined_data[len(page_data_df):]
+            # page_data_encoded = encoded_combined_data[:len(page_data_df)]
+            # db_data_encoded = encoded_combined_data[len(db_data_df):]
 
             current_element_data = {
                 "class": None,
@@ -147,13 +157,14 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
             df_current_element.fillna("None", inplace=True)
 
             # Reindex the current element DataFrame to match the order of combined_data columns
-            df_current_element = df_current_element.reindex(columns=combined_data.columns, fill_value="None")
+            # df_current_element = df_current_element.reindex(columns=combined_data.columns, fill_value="None")
+            df_current_element = df_current_element.reindex(columns=db_data_df.columns, fill_value="None")
 
             # Encode the current element data using the fitted encoder
             encoded_current_data = encoder.transform(df_current_element)
 
             rf = RandomForestClassifier(n_estimators=100, random_state=42)
-            rf.fit(page_data_encoded, range(len(page_data_df)))
+            rf.fit(db_data_encoded, range(len(db_data_df)))
 
             predicted_index = rf.predict(encoded_current_data)[0]
             probabilities = rf.predict_proba(encoded_current_data)[0]
@@ -164,11 +175,13 @@ def SelfHealing(driver, tasks, tasks_results, TestId):
                 if p > 0: # Filtering out zero probabilities for clarity
                     print(f" Element {i} - Probability: {p}")
 
-            predicted_element_json = json.loads(page_data_df.iloc[predicted_index].to_json())
+            predicted_element_json = json.loads(db_data_df.iloc[predicted_index].to_json())
+            predicted_element_json['task'] = step
             print("Predicted element:")
             print(predicted_element_json)
 
             return predicted_element_json
+
 
 
     

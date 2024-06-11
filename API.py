@@ -159,7 +159,9 @@ def insertTask():
 
 if __name__ == '__main__':
     print ("Running API...")
-    app.run(debug=True)
+    # app.run(debug=True)
     #app.run(host='0.0.0.0', port=10206, debug=True)
+    app.run(host='10.22.198.111', port=5000, debug=True, threaded=False)
+
     
     app.run()
