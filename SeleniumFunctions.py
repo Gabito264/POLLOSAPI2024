@@ -78,7 +78,7 @@ def TaskInsert(driver, steps, elements, response, etype):
             
             xpath = driver.execute_script(xpath_script, element)
 
-        except: 
+        except Exception as e: 
             class_bd = None
             css_selector = None
             id = None
@@ -180,8 +180,8 @@ def addText(driver, access, quantity, selector, text, positionstring, elements):
         else:
             raise ValueError(f'Incorrect quantity input: "{quantity}"')
         textField.clear()
-        textField.send_keys(text)
         elements.append(textField)
+        textField.send_keys(text)
         return result
     except Exception as e:
         print(e)
@@ -209,8 +209,8 @@ def clickElement(driver, access, quantity, selector, positionstring, elements):
                 raise ValueError(f'Incorrect position input: "{positionstring}", must be a digit') ##############################################################
         else:
             raise ValueError(f'Incorrect quantity input: "{quantity}"')
-        link.click()
         elements.append(link)
+        # link.click()
         return result
     except Exception as e:
         print(e)
@@ -262,7 +262,7 @@ def testing(url, ip, steps):
 
     if(len(test) == 0):
         response = sql.insertTest(testId ,test_data["Webpage"], test_data["Browser"])
-        if response:
+        if response == None:
             print("Error al insertar el test en la base de datos.")
 
     driver = webdriver.Chrome()  # Cambia esto dependiendo del navegador que estés utilizando
@@ -278,12 +278,15 @@ def testing(url, ip, steps):
 
     elements = []
     
+
+    
     results = execute_steps(driver, steps, elements)
     print("Results:", results)
     
-    if all(('Inserted' or 'Clicked') in step_result for step_result in results):
+    if all(('Clicked' in step_result) or ('Inserted' in step_result) for step_result in results):
         etype = "Success"
     else:
+
         etype = next((result for result in results if ('Inserted' or 'Clicked') not in result), "Success")
         etype = etype[:200]
         
